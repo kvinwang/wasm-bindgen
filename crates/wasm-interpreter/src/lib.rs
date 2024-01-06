@@ -227,6 +227,7 @@ impl Interpreter {
 
         let mut frame = Frame {
             module,
+            func_name: &func.name.as_ref().map(|s| &**s).unwrap_or("<unknown>"),
             interp: self,
             locals: BTreeMap::new(),
             done: false,
@@ -250,6 +251,7 @@ impl Interpreter {
 struct Frame<'a> {
     module: &'a Module,
     interp: &'a mut Interpreter,
+    func_name: &'a str,
     locals: BTreeMap<LocalId, i32>,
     done: bool,
 }
@@ -354,7 +356,7 @@ impl Frame<'_> {
                     self.interp.call(e.func, self.module, &args);
                 }
             }
-
+            Instr::Block(_) => {}
             // All other instructions shouldn't be used by our various
             // descriptor functions. LLVM optimizations may mean that some
             // of the above instructions aren't actually needed either, but
@@ -364,7 +366,7 @@ impl Frame<'_> {
             // Note that LLVM may change over time to generate new
             // instructions in debug mode, and we'll have to react to those
             // sorts of changes as they arise.
-            s => panic!("unknown instruction {:?}", s),
+            s => panic!("unknown instruction {:?} in function {}", s, self.func_name),
         }
     }
 }
